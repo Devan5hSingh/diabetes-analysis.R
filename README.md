@@ -1,78 +1,26 @@
-# diabetes-analysis.R
-Exploratory analysis of the Pima Indians Diabetes dataset in R: data cleaning, visualisation, statistical tests and logistic regression to identify factors associated with diabetes.
-# Diabetes Risk Factors: Exploratory Analysis in R
+library(readxl)
+bp1 <- read_xlsx(file.choose())
 
-An exploratory data analysis of the Pima Indians Diabetes dataset in R. The project cleans the data, compares diabetic and non-diabetic patients visually and statistically, and fits a logistic regression to see which measurements are associated with diabetes.
+bp1$Outcome <- factor(bp1$Outcome, levels = c(0, 1),
+                      labels = c("No diabetes", "Diabetes"))
+cols <- c("Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI")
+bp1[cols] <- lapply(bp1[cols], function(x) replace(x, x == 0, NA))
+hist(bp1$Insulin, breaks = 30, main = "Insulin distribution", xlab = "Insulin")
+# correlation heatmap
+cor_mat <- cor(bp1[, -9], use = "complete.obs")
+round(cor_mat, 2)
+heatmap(cor_mat, symm = TRUE, margins = c(10, 10))
 
-**Author:** Devansh Singh
-
-## Question
-
-Which clinical measurements best distinguish patients with diabetes from those without?
-
-## Dataset
-
-- 768 female patients, 8 measurements plus an outcome (`Outcome`: 0 = no diabetes, 1 = diabetes)
-- 500 patients without diabetes, 268 with diabetes
-- Variables: Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age
-- Source: Pima Indians Diabetes Database, originally from the National Institute of Diabetes and Digestive and Kidney Diseases (available on UCI and Kaggle). The file is included in `data/` for convenience.
-
-## Method
-
-1. **Cleaning.** In Glucose, BloodPressure, SkinThickness, Insulin and BMI, a value of 0 is biologically impossible and really means "not measured". These zeros were converted to `NA`. After this step, Insulin is missing for 374 patients (about 49%) and SkinThickness for 227 (about 30%).
-2. **Exploration.** Histogram, boxplot, scatter plot, correlation heatmap and density plot.
-3. **Group comparison.** Welch t-tests for Glucose and BMI; Wilcoxon rank-sum test for Insulin (skewed).
-4. **Modelling.** Logistic regression: `Outcome ~ Glucose + BMI + Age`.
-
-## Key findings
-
-- **Glucose separates the groups best.** Median glucose is 107 in patients without diabetes and 140 in patients with diabetes (means 110.6 vs 142.3). The difference is highly significant (Welch t-test, p < 0.001).
-- **BMI and insulin are also higher in the diabetes group.** Mean BMI is 30.9 vs 35.4 (p < 0.001). Median insulin is 102.5 vs 169.5 (Wilcoxon, p < 0.001). The groups overlap much more in BMI than in glucose.
-- **Insulin is strongly right-skewed**, so medians and rank-based tests are more appropriate than means and t-tests.
-- **Correlations between measurements:** Pregnancies and Age are correlated (about 0.55), as are Glucose and Insulin (about 0.58).
-- **Logistic regression** (752 patients with complete data for the three predictors) gave these odds ratios, all with p < 0.001:
-
-| Predictor | Odds ratio (per 1-unit increase) |
-|---|---|
-| Glucose | 1.04 |
-| BMI | 1.09 |
-| Age | 1.03 |
-
-Higher glucose, BMI and age were each associated with higher odds of diabetes when the other two were held constant. Odds ratios are per one unit of each variable, so their sizes should not be compared directly across predictors.
-
-## Figures
-
-After running the script, the plots are saved in `results/`:
-
-| File | Shows |
-|---|---|
-| `insulin_histogram.png` | Distribution of insulin (zeros removed) |
-| `glucose_boxplot.png` | Glucose by outcome |
-| `glucose_vs_bmi.png` | Glucose vs BMI, coloured by outcome |
-| `correlation_heatmap.png` | Correlation between measurements |
-| `glucose_density.png` | Glucose density curves by outcome |
-| `model_summary.txt` | Logistic regression output and odds ratios |
-
-## How to run
-
-1. Install [R](https://cran.r-project.org/) and [RStudio](https://posit.co/download/rstudio-desktop/).
-2. Download or clone this repository.
-3. Open `analysis.R` in RStudio, set the working directory to the project folder (Session > Set Working Directory > To Source File Location).
-4. Run the whole script (Ctrl+Shift+Enter). Required packages (`readxl`, `ggplot2`) install automatically if missing.
-
-## Limitations
-
-- Small dataset (768 patients) from a single population, so results may not generalise.
-- Heavy missingness in Insulin and SkinThickness; complete-case analysis drops patients and may introduce bias.
-- This is an association study, not a causal one. The model was not evaluated on held-out data, so it makes no claim about predictive accuracy.
-- Only three predictors were modelled; other variables (e.g. Pregnancies, DiabetesPedigreeFunction) could be added and compared.
-
-## Possible next steps
-
-- Add more predictors and compare models with AIC.
-- Split into training and test sets and report accuracy / ROC-AUC.
-- Impute missing values instead of dropping them.
-
-## Tools
-
-R, `readxl`, `ggplot2`, base R graphics (`hist`, `boxplot`, `heatmap`), `glm`.
+# glucose density by outcome
+install.packages("ggplot2")   # once
+library(ggplot2)
+ggplot(bp1, aes(x = Glucose, fill = Outcome)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Glucose distribution by outcome")
+summary(bp1)
+t.test(Glucose ~ Outcome, data = bp1)
+t.test(BMI ~ Outcome, data = bp1)
+wilcox.test(Insulin ~ Outcome, data = bp1)
+model <- glm(Outcome ~ Glucose + BMI + Age, data = bp1, family = binomial)
+summary(model)
+round(exp(coef(model)), 2)    # odds ratios 
