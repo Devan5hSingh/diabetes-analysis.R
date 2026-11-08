@@ -74,3 +74,30 @@ After running the script, the plots are saved in `results/`:
 ## Tools
 
 R, `readxl`, `ggplot2`, base R graphics (`hist`, `boxplot`, `heatmap`), `glm`.
+
+
+## Figures
+
+### Glucose by outcome
+![Glucose boxplot](results/glucose_boxplot.png)
+*Glucose is clearly higher in patients with diabetes (median 140 vs 107), and the boxes barely overlap.*
+
+### Glucose distribution by outcome
+![Glucose density](results/glucose_density.png)
+*The diabetes curve is shifted right with a long tail toward 200; the overlap shows glucose is strong but not a perfect separator.*
+
+### Glucose vs BMI
+![Glucose vs BMI](results/glucose_vs_bmi.png)
+*Diabetic patients (red) sit higher on glucose, while BMI overlaps heavily between groups, so glucose carries more information.*
+
+### Correlation between measurements
+![Correlation heatmap](results/correlation_heatmap.png)
+*Darker squares mean stronger correlation; the strongest links are Glucose-Insulin, Pregnancies-Age and BMI-SkinThickness.*
+
+### Insulin distribution
+![Insulin histogram](results/insulin_histogram.png)
+*Insulin is strongly right-skewed and missing for about 49% of patients, so a rank-based test was used.*
+
+### Logistic regression
+See [`results/model_summary.txt`](results/model_summary.txt): glucose, BMI and age were each associated with higher odds of diabetes (odds ratios 1.04, 1.09 and 1.03, all p < 0.001).
+
